@@ -1,14 +1,52 @@
-import logging
-import matplotlib.pyplot as plt
+import sys
+
 import numpy as np
 import scipy.spatial as spatial
-import sdeint as sdint
-import sys
+
 import helper_functions as hf
 
 
 class SimulationObject:
     def __init__(self, parameter_dict):
+
+        '''Initializes the class
+                Parameters
+                ----------
+                parameter_dict : dictionary of initial values for simulation.
+                See class member explanation below for details.
+
+                Class members
+                ----------
+                num_points : int
+                   Number of birds in our simulation.
+                box_size : float or int
+                    Side-length of simulation box.  The simulation has periodic boundary conditions
+                nu : float or int
+                    Co-efficient of alignment.  Characterizes how good the birds are at aligning with each other
+                C : float or int
+                    Co-efficient of  error.  Characterizes the maximum magnitude of the error in alignment for a single
+                    bird
+                speed: float or int
+                    The speed (in simulation units/simulation time) that a bird moves.  All birds move at constant speed
+                w_amp : float or int
+                    Amplitude of randomness on circle radius
+                w0 : float or int
+                    base circle size
+                ww : float or int
+                    array of circle sizes (essentially)
+                _max_dist : float or int
+                    Maximum distance each bird looks to calculate its correction to alignment.
+                current_points: [num_points x 2] array of floats
+                    The current positions of all the birds.
+                current_v: [num_points x 2] array of floats
+                    Orientations of birds.  These are unit vectors.
+                F, G : lambda functions of v, and t
+                    These functions are used to calculate dv for the numerical integraion
+                vshape: 2x1 array
+                    The initial shape of the v array
+                vbar: [num_points x 2] array of floats
+                    The average orientation of each point as calculated from its neighbors.
+                   '''
 
         # parameters
         self.num_points = 200
@@ -32,6 +70,16 @@ class SimulationObject:
         self.vbar, self.NiNk = self.calc_vbar()
 
     def set_parameters(self, parameter_dict):
+        '''Sets the parameters for the simulation based on the values in parameter_dict.  Does nothing if value not assigned in parameter_dict
+            Parameters
+            ----------
+            parameter_dict: dictionary
+                simulation input
+
+            Returns
+            ----------
+            None
+        '''
         if 'num_points' in parameter_dict:
             if hf.check_type(parameter_dict['num_points'], [int, float]):
                 self.num_points = parameter_dict['num_points']
@@ -102,6 +150,16 @@ class SimulationObject:
         return None
 
     def set_ww(self, parameter_dict):
+        '''Sets the array of circle radii once flocks have been placed.  This is necessary because placing flocks
+        changes the number of points.
+            Parameters
+            ----------
+            parameter_dict: dictionary
+                simulation input
+
+            Returns
+            ----------
+            None'''
         if 'w_amp' in parameter_dict:
             if hf.check_type(parameter_dict['w_amp'], [int, float]):
                 self.w_amp = parameter_dict['w_amp']
@@ -114,6 +172,15 @@ class SimulationObject:
         self.ww = self.w_amp * np.random.random(self.num_points) + self.w0
 
     def _initialize_step(self, parameter_dict):
+        '''Function to iniitalize the simulation.
+        Parameters
+        ----------
+        parameter_dict: dictionary
+            simulation input
+
+        Returns
+        ----------
+        None'''
         if 'initial_flocks' in parameter_dict:
             x_points, y_points = self.place_flocks(parameter_dict)
             x_points = np.array([item for sublist in x_points for item in sublist])
@@ -136,7 +203,18 @@ class SimulationObject:
         self.F = self.set_F()
 
     def place_flocks(self, parameter_dict):
+        ''' Places birds
+            Parameters
+            ----------
+            parameter_dict: dictionary
+                simulation input
 
+            Returns
+            ----------
+            x_points : [num_points x 1] array of floats
+                x positions of birds
+            y_points : [num_points x 1] array of floats
+                y positions of birds'''
         initial_flocks = parameter_dict['initial_flocks']
 
         x_points = []
@@ -153,20 +231,26 @@ class SimulationObject:
         return x_points, y_points
 
     def set_max_dist(self, max_dist):
+        '''Sets the maximum distance that a bird will look for its neighbors
+            Parameters
+            -----------
+            max_dist : float or int
+                Numer of units a bird will check for neighbors'''
         if max_dist <= 0:
-            logging.log('max distance cannot be set less than or equal to zero.  Setting to 2.')
+            print('max distance cannot be set less than or equal to zero.  Setting to 2.')
             self._max_dist = 2
         else:
             self._max_dist = max_dist
 
     def calc_vbar(self):
+        # Calculates the average velocities from neighboring birds depending on max_dist and max_num.
         my_tree = spatial.cKDTree(self.current_points)
         dist, indexes = my_tree.query(self.current_points, k=self._max_num)
 
         ri = np.zeros((len(self.current_points), self._max_num), dtype=int)
         rk = np.zeros_like(ri, dtype=int)
 
-        good_inds = ((dist < self._max_dist))
+        good_inds = (dist < self._max_dist)
         ri[good_inds] = indexes[good_inds]
         rk[good_inds] = 1
 
@@ -218,6 +302,20 @@ class SimulationObject:
         return lambda v, t: self.f_def(v, t)
 
     def run_step_alt(self, ti, ti1):
+        ''' Propagates the simulation one step forward in time using simple Euler method.
+            Parameters
+            ----------
+            ti : float
+                time of start of this step
+            ti1 : float
+                time start of the next tep
+
+            Returns
+            ----------
+            x_points : [num_points x 1] array of floats
+                x positions of birds
+            y_points : [num_points x 1] array of floats
+                y positions of birds'''
         delta_t = ti1 - ti
         if delta_t <= 0:
             print 'time delta for step must be greater than 0'

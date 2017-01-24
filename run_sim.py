@@ -1,7 +1,7 @@
+import argparse as ap
 import time
 
 import numpy as np
-import argparse as ap
 
 import SimulationObject as SO
 import visualizations as v
@@ -10,8 +10,8 @@ from input import parameter_dict
 if __name__ == '__main__':
     parser = ap.ArgumentParser(description='Simulate flocking with rotation.')
 
-    parser.add_argument('-t', dest='sim_time', type = int, help='time to run simulation', default =15)
-    parser.add_argument('-o', dest='output_file', type=str, help='output movie name', default = 'output.mp4')
+    parser.add_argument('-t', dest='sim_time', type=int, help='time to run simulation', default=15)
+    parser.add_argument('-o', dest='output_file', type=str, help='output movie name', default='output.mp4')
     args = parser.parse_args()
 
     sim = SO.SimulationObject(parameter_dict)
@@ -42,6 +42,5 @@ if __name__ == '__main__':
     print('...creating movie...')
     writer = v.initialize_movie_writer()
     data = np.array([X, V, t, sim.box_size, sim._max_dist])
-    v.write_movie(data, writer, movie_path_and_name = args.output_file)
+    v.write_movie(data, writer, movie_path_and_name=args.output_file)
     print('...done!')
-

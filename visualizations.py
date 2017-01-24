@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 import numpy as np
-import isolum_rainbow
 
 
 def draw_frame(**kwargs):
+    # draws a frame of the simulation.
     if 'x' in kwargs:
         px = list(kwargs['x'])
         px.append([-100, -100])
@@ -75,6 +75,17 @@ def draw_frame(**kwargs):
 
 
 def initialize_movie_writer(**kwargs):
+    ''' Initializes movie writer for simulation animation.
+        Parameters
+        ----------
+        There are only optional keyword inputs here.
+        'metadata': metadata for movie.  'title', 'artist', 'comment' are metadata inputs.
+        'qm' : sets frame rate.  Framerate is 40/qm.
+
+        Returns
+        ---------
+        FFMpegWriter : manimation object
+            writer for animation'''
     FFMpegWriter = manimation.writers['ffmpeg']
 
     if 'metadata' in kwargs:
@@ -84,17 +95,28 @@ def initialize_movie_writer(**kwargs):
                         comment='Movie support!')
     if 'qm' in kwargs:
         qm = kwargs['qm']
-        if qm >=1 and qm <=4:
+        if 1 <= qm <= 4:
             qm = qm
         else:
             qm = 1
     else:
-        qm =1
+        qm = 1
 
-    return FFMpegWriter(fps=int(40./qm), bitrate=3000, metadata=metadata)
+    return FFMpegWriter(fps=int(40. / qm), bitrate=3000, metadata=metadata)
 
 
-def write_movie(data, writer, qm = 1, **kwargs):
+def write_movie(data, writer, qm=1, **kwargs):
+    ''' Writes the movie to an mp4 file.
+        Parameters
+        ----------
+        data: list of arrays
+            Data list has formate of [X, V, t, box_size, max_dist]. box size and max_dist are floats.
+            X is an array of positions from simulation. V is array of orientations from simulation.
+        writer : manimation movie writer
+
+        Returns
+        ---------
+        None'''
     X = data[0]
     V = data[1]
     t = data[2]
@@ -107,7 +129,7 @@ def write_movie(data, writer, qm = 1, **kwargs):
     else:
         name = kwargs['movie_path_and_name']
         if name.split('.')[-1] != 'mp4':
-            name = name+'.mp4'
+            name += '.mp4'
 
     fig = plt.figure(figsize=(3, 3))
     ax = plt.axes([0, 0, 1, 1])
@@ -120,5 +142,3 @@ def write_movie(data, writer, qm = 1, **kwargs):
                 writer.grab_frame()
                 for cobject in ca:
                     cobject.remove()
-
-
