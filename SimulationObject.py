@@ -1,12 +1,10 @@
-import sys
 import logging
-
-import numpy as np
-
-import sdeint as sdint
-import scipy.spatial as spatial
-
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.spatial as spatial
+import sdeint as sdint
+import sys
+import helper_functions as hf
 
 
 class SimulationObject:
@@ -18,12 +16,12 @@ class SimulationObject:
         self.nu = 3
         self.C = 1.5
         self.speed = 2
-        self.wamp = 1
+        self.w_amp = 1
         self.ww = 0
+        self.w0 = 0
+        self.w_amp = 0
         self._max_dist = 2
-        self._max_num = 10
-        # I will store current step
-
+        self._max_num = 20
         self.current_points = 0
         self.current_v = 0
         self.F = -1
@@ -31,67 +29,89 @@ class SimulationObject:
         self.set_parameters(parameter_dict)
         self._initialize_step(parameter_dict)
         self.vshape = np.shape(self.current_v)
-
-
         self.vbar, self.NiNk = self.calc_vbar()
-        #self.F_fun, self.G_fun = self.time_0()
 
     def set_parameters(self, parameter_dict):
-        # type: (object) -> object
-        """
-        :type parameter_dict: object
-
-        :rtype: None
-
-        """
         if 'num_points' in parameter_dict:
-            self.num_points = parameter_dict['num_points']
+            if hf.check_type(parameter_dict['num_points'], [int, float]):
+                self.num_points = parameter_dict['num_points']
+            else:
+                print('num_points given is improper type.  Assigning to default of 200.')
         else:
-            logging.info('Number of points not given.  Assigning to default of 200')
+            print('Number of points not given.  Assigning to default of 200')
 
         if 'box_size' in parameter_dict:
-            self.box_size = parameter_dict['box_size']
+            if 'box_size' in parameter_dict:
+                if hf.check_type(parameter_dict['box_size'], [int, float]):
+                    self.box_size = parameter_dict['box_size']
+                else:
+                    print('box_size given is improper type.  Assigning to default of 30.')
         else:
-            logging.info('Box size not given.  Assigning to default of 30')
+            print('box_size not given.  Assigning to default of 30')
 
         if 'nu' in parameter_dict:
-            self.nu = parameter_dict['nu']
+            if hf.check_type(parameter_dict['nu'], [int, float]):
+                self.nu = parameter_dict['nu']
+            else:
+                print('Type Error: Type for nu should be int or float.  Assigning to default of 3. ')
+
         else:
-            logging.info('Nu not given.  Assigning to default of 3')
+            print('Nu not given.  Assigning to default of 3.')
 
         if 'C' in parameter_dict:
-            self.C = parameter_dict['C']
+            if hf.check_type(parameter_dict['C'], [int, float]):
+                self.C = parameter_dict['C']
+            else:
+                print('Type Error: Type for C should be int or float.  Exiting program. Assigning to default of 1')
+
         else:
-            logging.info('C not given.  Assigning to default of 1')
+            print('C not given.  Assigning to default of 1')
 
         if 'speed' in parameter_dict:
-            self.speed = parameter_dict['speed']
+            if hf.check_type(parameter_dict['speed'], [int, float]):
+                self.speed = parameter_dict['speed']
+            else:
+                print('Type Error: Type for nu should be int or float.  Assigning to default of 2.')
+
         else:
-            logging.info('speed not given.  Assigning to default of 2')
+            print('speed not given.  Assigning to default of 2.')
 
         if 'w0' in parameter_dict:
-            self.w0 = 1
+            if hf.check_type(parameter_dict['w0'], [int, float]):
+                self.w0 = parameter_dict['w0']
+            else:
+                print('Type Error: Type for w0 should be int or float.  Assigning to default of 1. ')
         else:
-            logging.info('w0 not given.  Assigning to defulat of 1')
+            print('w0 not given.  Assigning to default of 1')
 
         if 'max_dist' in parameter_dict:
-            self._max_dist = parameter_dict['max_dist']
+            if hf.check_type(parameter_dict['max_dist'], [int, float]):
+                self._max_dist = parameter_dict['max_dist']
+            else:
+                print('Type Error: Type for max_dist should be int or float.  Assigning to default of 2. ')
         else:
-            logging.info('Max dist not given. Assigning to default of 2')
+            print('Max dist not given. Assigning to default of 2')
 
         if 'max_num' in parameter_dict:
-            self._max_num = parameter_dict['max_num']
+            if hf.check_type(parameter_dict['max_num'], [int, float]):
+                self._max_num = parameter_dict['max_num']
+            else:
+                print('Type Error: Type for max_num should be int or float.  Assigning to default of 20. ')
         else:
-            logging.info('Max num not set.  Assigning to default of 10')
+            print('Max num not set.  Assigning to default of 20')
         return None
 
     def set_ww(self, parameter_dict):
         if 'w_amp' in parameter_dict:
-            w_amp = parameter_dict['w_amp']
+            if hf.check_type(parameter_dict['w_amp'], [int, float]):
+                self.w_amp = parameter_dict['w_amp']
+            else:
+                print('Type Error: Type for w_amp should be int or float.  Assigning to default of 0.1 ')
+                self.w_amp = 0.1
         else:
-            w_amp = 1
-        self.w_amp = w_amp
-        self.ww = w_amp*(1/10.*np.random.random(self.num_points)+1)
+            self.w_amp = 0.1
+            print('w_amp set to default value of 0.1')
+        self.ww = self.w_amp * np.random.random(self.num_points) + self.w0
 
     def _initialize_step(self, parameter_dict):
         if 'initial_flocks' in parameter_dict:
@@ -99,11 +119,11 @@ class SimulationObject:
             x_points = np.array([item for sublist in x_points for item in sublist])
             y_points = np.array([item for sublist in y_points for item in sublist])
             self.num_points = len(x_points)
-            #TODO: Add statement saying num_points in dict has been overridden
+            print 'placing flocks...This overides value of num_points in input dictionary...'
         else:
-            bs = self.box_size/2
-            x_points = (2*bs) * (np.random.random(self.num_points)) + bs
-            y_points = (2*bs) * (np.random.random(self.num_points)) + bs
+            bs = self.box_size / 2
+            x_points = (2 * bs) * (np.random.random(self.num_points)) + bs
+            y_points = (2 * bs) * (np.random.random(self.num_points)) + bs
         self.current_points = np.array(zip(x_points, y_points))
 
         orientation = 2 * np.pi * np.random.random(self.num_points)
@@ -125,14 +145,12 @@ class SimulationObject:
             center = flock[0]
             length = flock[1]
             num_in_flock = flock[2]
-            x = center[0] + length/2. * (np.random.random(num_in_flock))
-            y = center[1] + length/2. * (np.random.random(num_in_flock))
+            x = center[0] + length / 2. * (np.random.random(num_in_flock))
+            y = center[1] + length / 2. * (np.random.random(num_in_flock))
             x_points.append(list(x))
             y_points.append(list(y))
 
         return x_points, y_points
-
-
 
     def set_max_dist(self, max_dist):
         if max_dist <= 0:
@@ -142,13 +160,13 @@ class SimulationObject:
             self._max_dist = max_dist
 
     def calc_vbar(self):
-        mytree = spatial.cKDTree(self.current_points)
-        dist, indexes = mytree.query(self.current_points, k=self._max_num)
+        my_tree = spatial.cKDTree(self.current_points)
+        dist, indexes = my_tree.query(self.current_points, k=self._max_num)
 
         ri = np.zeros((len(self.current_points), self._max_num), dtype=int)
         rk = np.zeros_like(ri, dtype=int)
 
-        good_inds = ((dist < self._max_dist) & (dist > 0))
+        good_inds = ((dist < self._max_dist))
         ri[good_inds] = indexes[good_inds]
         rk[good_inds] = 1
 
@@ -157,37 +175,12 @@ class SimulationObject:
 
         mean_n = []
         for i in range(len(ri)):
-            nei = ri[i]
+            nei = ri[i][np.where(rk[i] == 1)[0]]
             mm = (np.arctan2(np.sum(np.sin(ori[nei])), np.sum(np.cos(ori[nei])))) % (2 * np.pi)
             mean_n.append(mm)
 
         vbar = np.array(zip(np.cos(mean_n), np.sin(mean_n)))
-
         return vbar, [np.array(ri), np.array(rk)]
-
-    def calc_force(self):
-        X = np.array(self.current_points)
-        ri = self.NiNk
-        Ni = ri[0].astype(int)
-
-        NP = len(X)
-
-        Xni = X[Ni]
-
-        vecs = np.array([(X[i] - Xni[i]) for i in xrange(len(Xni))])
-        mags = np.sum(abs(vecs) ** 2, axis=-1) ** (1 / 2.)
-
-        mags[np.where(mags == 0)] = 1
-        mags = np.reshape(mags, [NP, self._max_num, 1])
-        vec_hat = vecs / mags
-
-        sig = 1
-        ep = 0.25
-        force = np.array(4*sig*(((12*ep**12)/mags**13) - (6*ep**6)/mags**7))*vec_hat
-
-        force_v = np.sum(force, axis=1)
-
-        return force_v
 
     def f_def(self, v, t):
         v = np.reshape(v, self.vshape)
@@ -205,14 +198,15 @@ class SimulationObject:
         for k in xrange(len(v)):
             t_p = np.tensordot(v[k], v[k], axes=0)
             p_vk = id_m - t_p
-            ret_s = self.nu * np.dot(p_vk, vbar[k]) + self.C * np.dot(p_vk, np.random.random(2))
+            r_ori = 2 * np.pi * np.random.random()
+            ret_s = self.nu * np.dot(p_vk, vbar[k]) + self.C * np.dot(p_vk, [np.sin(r_ori), np.cos(r_ori)])
 
             ret_s = np.reshape(ret_s, [2, 1])
             ret.append(ret_s)
 
         ret = np.array(ret)
 
-        return np.reshape(ret, (2 * len(ret), 1))
+        return np.reshape(ret, 2 * len(ret))
 
     def set_G(self):
         vbar, rd = self.calc_vbar()
@@ -223,35 +217,20 @@ class SimulationObject:
 
         return lambda v, t: self.f_def(v, t)
 
-    def run_step(self, ti, ti1):
+    def run_step_alt(self, ti, ti1):
         delta_t = ti1 - ti
-        if delta_t <=0:
+        if delta_t <= 0:
+            print 'time delta for step must be greater than 0'
             sys.exit()
-            #add error message
+
         self.G = self.set_G()
-        vv = sdint.stratint(self.F, self.G, np.array(self.current_v).flatten(), [ti, ti1])
-        vv = vv[-1]
-        vv = np.reshape(vv, self.vshape)
-        vv = np.array(vv)
-
+        dv = self.F(self.current_v, ti) + self.G(self.current_v, ti)
+        dv = np.reshape(dv, self.vshape)
+        vv = self.current_v + delta_t * dv
         vv_mags = np.sqrt(vv[:, 0] ** 2 + vv[:, 1] ** 2)
-
         vv = np.array([vv[i] / vv_mags[i] for i in xrange(len(vv))])
 
         xx = (self.current_points + delta_t * self.speed * vv) % self.box_size
 
-
         self.current_v = vv
         self.current_points = xx
-
-        mxm = max(xx.flatten())
-        if mxm > 100:
-            sys.exit()
-
-
-
-
-
-
-
-

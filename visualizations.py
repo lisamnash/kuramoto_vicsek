@@ -1,11 +1,11 @@
 import sys
-
-import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+from matplotlib.collections import PatchCollection
 import numpy as np
 import isolum_rainbow
 
-import visualizations as v
 
 def draw_frame(**kwargs):
     if 'x' in kwargs:
@@ -19,14 +19,13 @@ def draw_frame(**kwargs):
 
     if 'v' in kwargs:
         pv = list(kwargs['v'])
-        pv.append([1,0])
+        pv.append([1, 0])
         pv.append([-1, 0])
         pv = np.array(pv)
     else:
         print 'speeds not given. exiting'
 
-
-    rr = 1.2 * kwargs['box_size']/40.
+    rr = 1.2 * kwargs['box_size'] / 40.
 
     arrow_arr = [[px[i, 0], px[i, 1], rr * pv[i, 0], rr * pv[i, 1]] for i in xrange(len(px))]
 
@@ -41,22 +40,24 @@ def draw_frame(**kwargs):
         fig = plt.figure(figsize=(3, 3))
         ax = plt.axes([0, 0, 1, 1])
 
-    X, Y, U, V = zip(*arrow_arr)
+    x, y, u, v = zip(*arrow_arr)
 
+    colors = (np.arctan2(pv[:, 1], pv[:, 0])) % (2 * np.pi)
+    colors[-1] = 0
+    colors[-2] = 2 * np.pi
 
+    quiv = ax.quiver(x, y, u, v, colors, angles='xy', scale_units='xy', scale=1, headaxislength=9,
+                     cmap='isolum_rainbow')
+    if 'rad' in kwargs:
+        patch = []
+        for x in px:
+            circ = Circle((x[0], x[1]), radius=kwargs['rad'])
+            patch.append(circ)
 
-    colors = (np.arctan2(pv[:,1], pv[:,0]))%(2*np.pi)
-    colors[-1]=0
-    colors[-2]=2*np.pi
-
-
-
-    #plt.scatter(px[:, 0], px[:, 1], alpha=.5, c = 'k')
-    #plt.scatter(px[0, 0], px[0, 1], alpha=.5, c='r')
-    plt.ion()
-    quiv = quiver_plot=ax.quiver(X, Y, U, V, colors, angles='xy', scale_units='xy', scale=1, headaxislength=3, cmap='isolum_rainbow')
-
-    plt.gca().set_aspect(1)
+        p = PatchCollection(patch, color='w', edgecolor='k', lw=0.2, alpha=0.1)
+        p.set_zorder(0)
+        ax.add_collection(p)
+    ax.set_aspect(1)
 
     if 'box_size' in kwargs:
         plt.ylim(-0, kwargs['box_size'])
@@ -68,8 +69,10 @@ def draw_frame(**kwargs):
     if 'save_name' in kwargs:
         plt.savefig(kwargs['save_name'])
         plt.close()
+        return -1, [quiv, p]
     else:
-        return fig, [quiv]
+        return fig, [quiv, p]
+
 
 def initialize_movie_writer(**kwargs):
     FFMpegWriter = manimation.writers['ffmpeg']
@@ -78,29 +81,44 @@ def initialize_movie_writer(**kwargs):
         metadata = kwargs['metadata']
     else:
         metadata = dict(title='Movie Test', artist='Matplotlib',
-                    comment='Movie support!')
-    return FFMpegWriter(fps=40, bitrate=3000, metadata=metadata)
+                        comment='Movie support!')
+    if 'qm' in kwargs:
+        qm = kwargs['qm']
+        if qm >=1 and qm <=4:
+            qm = qm
+        else:
+            qm = 1
+    else:
+        qm =1
+
+    return FFMpegWriter(fps=int(40./qm), bitrate=3000, metadata=metadata)
 
 
-def write_movie(data, writer, **kwargs):
+def write_movie(data, writer, qm = 1, **kwargs):
     X = data[0]
     V = data[1]
     t = data[2]
     box_size = data[3]
+    max_dist = data[4]
 
     if 'movie_path_and_name' not in kwargs:
         name = 'default.mp4'
 
     else:
         name = kwargs['movie_path_and_name']
+        if name.split('.')[-1] != 'mp4':
+            name = name+'.mp4'
 
     fig = plt.figure(figsize=(3, 3))
     ax = plt.axes([0, 0, 1, 1])
 
-    with writer.saving(fig, name, 200):
+    with writer.saving(fig, name, 100):
         for i in xrange(len(t) - 1):
-            fig, ca = v.draw_frame(fig=fig, ax=ax, x=X[i], v=V[i],
-                                   box_size=box_size)
-            writer.grab_frame()
-            for cobject in ca:
-                cobject.remove()
+            if i % qm == 0:
+                fig, ca = draw_frame(fig=fig, ax=ax, x=X[i], v=V[i],
+                                     box_size=box_size, rad=max_dist)
+                writer.grab_frame()
+                for cobject in ca:
+                    cobject.remove()
+
+
