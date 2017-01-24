@@ -38,9 +38,9 @@ The input parameters of the simulation can be modified in the file `input.py`.  
 
 - `nu` : Coefficient for alignment.  The higher this coefficient, the quicker a bird will become aligned with its neighbors.  If set to 0, the birds will not align.
 
--`max_dist` : The maximum distance a bird looks to align.  Represented as faint circle in the movie output.
+- `max_dist` : The maximum distance a bird looks to align.  Represented as faint circle in the movie output.
 
--`max_num` : Some researchers have actually found that in starling flocks the birds only pay attention to their 7 nearest neighbors despite flock density!  Here you can set the maximum number of birds that each bird will pay attention to (will look at closest `max_num` birds). 
+- `max_num` : Some researchers have actually found that in starling flocks the birds only pay attention to their 7 nearest neighbors despite flock density!  Here you can set the maximum number of birds that each bird will pay attention to (will look at closest `max_num` birds). 
 
 ## Running the simulation
 To run the simulation, type the following :
