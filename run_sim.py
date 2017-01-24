@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-import SimulationObject as SO
+import simulation_object as so
 import visualizations as v
 from input import parameter_dict
 
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='output_file', type=str, help='output movie name', default='output.mp4')
     args = parser.parse_args()
 
-    sim = SO.SimulationObject(parameter_dict)
+    sim = so.SimulationObject(parameter_dict)
 
     delta_t = 0.02
     total_time = args.sim_time
