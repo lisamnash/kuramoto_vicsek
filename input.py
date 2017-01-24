@@ -1,0 +1,11 @@
+parameter_dict = {'initial_flocks': [[[5., 5.], 1., 50],
+                                     [[1.2, 7.3], 3, 65]],
+                  'num_points': 150,
+                  'box_size': 15,
+                  'w_amp': 0.2,
+                  'w0': 1.,
+                  'speed': 1.0,
+                  'C': 3.5,
+                  'nu': 1.,
+                  'max_dist': 1.5,
+                  'max_num': 200}
