@@ -1,3 +1,4 @@
+#testing pushing
 def check_type(input, type_array):
     '''Function to check the data type of an input'''
     if len(type_array) > 0:
