@@ -10,7 +10,7 @@ from input import parameter_dict
 if __name__ == '__main__':
     parser = ap.ArgumentParser(description='Simulate flocking with rotation.')
 
-    parser.add_argument('-t', dest='sim_time', type=int, help='time to run simulation', default=15)
+    parser.add_argument('-t', dest='sim_time', type=int, help='time to run simulation', default=2)
     parser.add_argument('-o', dest='output_file', type=str, help='output movie name', default='output.mp4')
     args = parser.parse_args()
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     delta_t = 0.02
     total_time = args.sim_time
 
-    steps = total_time / delta_t
+    steps = int(total_time / delta_t)
     t = np.linspace(0, total_time, steps)
 
     st = time.time()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     V = []
 
     print('...running simulation...')
-    for i in xrange(len(t) - 1):
+    for i in range(len(t) - 1):
         ti = t[i]
         ti1 = t[i + 1]
         sim.run_step_alt(ti, ti1)

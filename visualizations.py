@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 import numpy as np
+from matplotlib.cm import get_cmap
+import colorcet as cc
+cmap_for_plotting = get_cmap("cet_CET_C11")
 
 
 def draw_frame(**kwargs):
@@ -14,7 +17,7 @@ def draw_frame(**kwargs):
         px.append([-100, -100])
         px = np.array(px)
     else:
-        print 'position not supplied, exiting'
+        print('position not supplied, exiting')
         sys.exit()
 
     if 'v' in kwargs:
@@ -23,11 +26,11 @@ def draw_frame(**kwargs):
         pv.append([-1, 0])
         pv = np.array(pv)
     else:
-        print 'speeds not given. exiting'
+        print('speeds not given. exiting')
 
     rr = 1.2 * kwargs['box_size'] / 40.
 
-    arrow_arr = [[px[i, 0], px[i, 1], rr * pv[i, 0], rr * pv[i, 1]] for i in xrange(len(px))]
+    arrow_arr = [[px[i, 0], px[i, 1], rr * pv[i, 0], rr * pv[i, 1]] for i in range(len(px))]
 
     if 'fig' in kwargs:
         fig = kwargs['fig']
@@ -40,14 +43,14 @@ def draw_frame(**kwargs):
         fig = plt.figure(figsize=(3, 3))
         ax = plt.axes([0, 0, 1, 1])
 
-    x, y, u, v = zip(*arrow_arr)
+    x, y, u, v = list(zip(*arrow_arr))
 
     colors = (np.arctan2(pv[:, 1], pv[:, 0])) % (2 * np.pi)
     colors[-1] = 0
     colors[-2] = 2 * np.pi
 
     quiv = ax.quiver(x, y, u, v, colors, angles='xy', scale_units='xy', scale=1, headaxislength=9,
-                     cmap='isolum_rainbow')
+                     cmap=cmap_for_plotting)
     if 'rad' in kwargs:
         patch = []
         for x in px:
@@ -135,7 +138,7 @@ def write_movie(data, writer, qm=1, **kwargs):
     ax = plt.axes([0, 0, 1, 1])
 
     with writer.saving(fig, name, 100):
-        for i in xrange(len(t) - 1):
+        for i in range(len(t) - 1):
             if i % qm == 0:
                 fig, ca = draw_frame(fig=fig, ax=ax, x=X[i], v=V[i],
                                      box_size=box_size, rad=max_dist)

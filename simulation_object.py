@@ -186,18 +186,18 @@ class SimulationObject:
             x_points = np.array([item for sublist in x_points for item in sublist])
             y_points = np.array([item for sublist in y_points for item in sublist])
             self.num_points = len(x_points)
-            print 'placing flocks...This overides value of num_points in input dictionary...'
+            print('placing flocks...This overides value of num_points in input dictionary...')
         else:
             bs = self.box_size / 2
             x_points = (2 * bs) * (np.random.random(self.num_points)) + bs
             y_points = (2 * bs) * (np.random.random(self.num_points)) + bs
-        self.current_points = np.array(zip(x_points, y_points))
+        self.current_points = np.array(list(zip(x_points, y_points)))
 
         orientation = 2 * np.pi * np.random.random(self.num_points)
         x_v = np.cos(orientation)
         y_v = np.sin(orientation)
 
-        self.current_v = np.array(zip(x_v, y_v))
+        self.current_v = np.array(list(zip(x_v, y_v)))
         self.set_ww(parameter_dict)
 
         self.F = self.set_F()
@@ -263,7 +263,7 @@ class SimulationObject:
             mm = (np.arctan2(np.sum(np.sin(ori[nei])), np.sum(np.cos(ori[nei])))) % (2 * np.pi)
             mean_n.append(mm)
 
-        vbar = np.array(zip(np.cos(mean_n), np.sin(mean_n)))
+        vbar = np.array(list(zip(np.cos(mean_n), np.sin(mean_n))))
         return vbar, [np.array(ri), np.array(rk)]
 
     def f_def(self, v, t):
@@ -273,13 +273,13 @@ class SimulationObject:
 
         v_perp2 = np.reshape(v_perp2, (len(self.ww), 2))
 
-        return np.array([self.ww[i] * v_perp2[i] for i in xrange(len(self.ww))]).flatten()
+        return np.array([self.ww[i] * v_perp2[i] for i in range(len(self.ww))]).flatten()
 
     def g_def(self, v, t, vbar):
         v = np.reshape(v, self.vshape)
         id_m = np.array([[1, 0], [0, 1]])
         ret = []
-        for k in xrange(len(v)):
+        for k in range(len(v)):
             t_p = np.tensordot(v[k], v[k], axes=0)
             p_vk = id_m - t_p
             r_ori = 2 * np.pi * np.random.random()
@@ -318,7 +318,7 @@ class SimulationObject:
                 y positions of birds'''
         delta_t = ti1 - ti
         if delta_t <= 0:
-            print 'time delta for step must be greater than 0'
+            print('time delta for step must be greater than 0')
             sys.exit()
 
         self.G = self.set_G()
@@ -326,7 +326,7 @@ class SimulationObject:
         dv = np.reshape(dv, self.vshape)
         vv = self.current_v + delta_t * dv
         vv_mags = np.sqrt(vv[:, 0] ** 2 + vv[:, 1] ** 2)
-        vv = np.array([vv[i] / vv_mags[i] for i in xrange(len(vv))])
+        vv = np.array([vv[i] / vv_mags[i] for i in range(len(vv))])
 
         xx = (self.current_points + delta_t * self.speed * vv) % self.box_size
 
